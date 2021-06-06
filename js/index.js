@@ -49,38 +49,56 @@ loadData().then(data => {
 
     colorScale.domain(d3.set(data.map(d=>d.region)).values());
 
-    d3.select('#range').on('change', function(){ 
+    d3.select('#range').on('change', function(){
         year = d3.select(this).property('value');
         yearLable.html(year);
+        console.log('year changing')
         updateScattePlot();
         updateBar();
     });
 
-    d3.select('#radius').on('change', function(){ 
+    d3.select('#radius').on('change', function(){
         rParam = d3.select(this).property('value');
         updateScattePlot();
     });
 
-    d3.select('#x').on('change', function(){ 
+    d3.select('#x').on('change', function(){
         xParam = d3.select(this).property('value');
         updateScattePlot();
     });
 
-    d3.select('#y').on('change', function(){ 
+    d3.select('#y').on('change', function(){
         yParam = d3.select(this).property('value');
         updateScattePlot();
     });
 
-    d3.select('#param').on('change', function(){ 
+    d3.select('#param').on('change', function(){
         param = d3.select(this).property('value');
         updateBar();
     });
-
-    function updateBar(){
+function updateBar(){
         return;
     }
+function updateScattePlot(){
 
-    function updateScattePlot(){
+    let xRange = data.map(d=> +d[xParam][year]);
+        x.domain([d3.min(xRange), d3.max(xRange)]);
+        xAxis.call(d3.axisBottom(x));
+
+    let yRange = data.map(d => +d[yParam][year]);
+        y.domain([d3.min(yRange), d3.max(yRange)]);
+        yAxis.call(d3.axisLeft(y));
+
+    let rRange = data.map(d => +d[rParam][year]);
+        radiusScale.domain([d3.min(rRange), d3.max(rRange)]);
+    scatterPlot.selectAll('circle').remove();
+    scatterPlot.selectAll('circle').data(data)
+              .enter()
+              .append('circle')
+              .attr("cx", d => x(d[xParam][year]))
+              .attr("cy", d => y(d[yParam][year]))
+              .attr("r", d => radiusScale(d[rParam][year]))
+              .style("fill", d => colorScale(d['region']));
         return;
     }
 
@@ -90,14 +108,14 @@ loadData().then(data => {
 
 
 async function loadData() {
-    const data = { 
+    const data = {
         'population': await d3.csv('data/population.csv'),
         'gdp': await d3.csv('data/gdp.csv'),
         'child-mortality': await d3.csv('data/cmu5.csv'),
         'life-expectancy': await d3.csv('data/life_expectancy.csv'),
         'fertility-rate': await d3.csv('data/fertility-rate.csv')
     };
-    
+
     return data.population.map(d=>{
         const index = data.gdp.findIndex(item => item.geo == d.geo);
         return  {
