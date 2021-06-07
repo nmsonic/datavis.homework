@@ -49,10 +49,9 @@ loadData().then(data => {
 
     colorScale.domain(d3.set(data.map(d=>d.region)).values());
 
-    d3.select('#range').on('change', function(){
+    d3.select('#range').on('input', function(){
         year = d3.select(this).property('value');
         yearLable.html(year);
-        console.log('year changing')
         updateScattePlot();
         updateBar();
     });
@@ -77,6 +76,27 @@ loadData().then(data => {
         updateBar();
     });
 function updateBar(){
+    let regions = d3.set(data.map(d=>d.region)).values();
+
+    let data_mean = regions.map(region =>{
+        return {'region':region,
+        'mean':d3.mean(data.filter(d => d.region == region).map(d => d[param][year]))}
+      });
+        xBar.domain(regions);
+        xBarAxis.call(d3.axisBottom(xBar));
+
+        yBar.domain([0, d3.max(data_mean.map(d => d.mean))]);
+        yBarAxis.call(d3.axisLeft(yBar));
+
+    barChart.selectAll('rect').remove();
+    barChart.selectAll('rect').data(data_mean)
+        .enter()
+        .append('rect')
+        .attr('x', d => xBar(d['region']))
+        .attr('y', d => yBar(d['mean']))
+        .attr("width", xBar.bandwidth())
+        .attr("height", function(d) { return height - margin- yBar(d.mean); })
+        .style("fill", d => colorScale(d['region']));
         return;
     }
 function updateScattePlot(){
