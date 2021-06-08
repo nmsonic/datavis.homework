@@ -80,6 +80,12 @@ loadData().then(data => {
         updateScattePlot();
 
     });
+
+    d3.select('#p').on('change', function () {
+        lineParam = d3.select(this).property('value');
+        updatelineChart();
+
+    });
 function updateBar(){
     let regions = d3.set(data.map(d=>d.region)).values();
 
@@ -131,13 +137,49 @@ function updateScattePlot(){
               .enter()
               .append('circle')
               .attr("region", d => d['region'])
+              .attr('country', d => d['country'])
               .attr("cx", d => x(d[xParam][year]))
               .attr("cy", d => y(d[yParam][year]))
               .attr("r", d => radiusScale(d[rParam][year]))
-              .style("fill", d => colorScale(d['region']));
+              .style("fill", d => colorScale(d['region']))
+              .on('click', function (d) {
+                  selected = d3.select(this).attr('country');
+                  scatterPlot.selectAll('circle')
+                         .attr('stroke-width', 1);
+                  d3.select(this).attr('stroke-width', 3);
+                  d3.select(this).raise();
+                  updatelineChart();
+                });
         return;
     }
+function updatelineChart(){
+  if (selected != '') {
+    d3.select('.country-name').text(selected);
 
+    chartData = Object.entries(data.filter(d => d.country == selected)[0][lineParam]).slice(0, 221);
+
+    dates = chartData.map(d => +d[0]);
+    data_Values = chartData.map(d => +d[1]);
+
+    x.domain([d3.min(dates), d3.max(dates)]);
+    xLineAxis.call(d3.axisBottom(x));
+
+    y.domain([d3.min(data_Values), d3.max(data_Values)]);
+    yLineAxis.call(d3.axisLeft(y));
+
+    lineChart.select('.lineData').remove();
+    lineChart.append("path")
+                 .datum(chartData)
+                 .attr("class", "lineData")
+                 .attr("fill", "none")
+                 .attr("stroke", "steelblue")
+                 .attr("stroke-width", 1.5)
+                 .attr("d", d3.line()
+                            .x(d => x(+d[0]))
+                            .y(d => y(+d[1])));
+    return;
+  }
+}
     updateBar();
     updateScattePlot();
 });
@@ -164,5 +206,5 @@ async function loadData() {
             'life-expectancy': data['life-expectancy'][index],
             'fertility-rate': data['fertility-rate'][index]
         }
-    })
+    });
 }
