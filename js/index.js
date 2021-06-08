@@ -58,22 +58,27 @@ loadData().then(data => {
 
     d3.select('#radius').on('change', function(){
         rParam = d3.select(this).property('value');
+        updateBar();
         updateScattePlot();
     });
 
     d3.select('#x').on('change', function(){
         xParam = d3.select(this).property('value');
+        updateBar();
         updateScattePlot();
     });
 
     d3.select('#y').on('change', function(){
         yParam = d3.select(this).property('value');
+        updateBar();
         updateScattePlot();
     });
 
     d3.select('#param').on('change', function(){
         param = d3.select(this).property('value');
         updateBar();
+        updateScattePlot();
+
     });
 function updateBar(){
     let regions = d3.set(data.map(d=>d.region)).values();
@@ -93,10 +98,20 @@ function updateBar(){
         .enter()
         .append('rect')
         .attr('x', d => xBar(d['region']))
+        .attr("region", d => d['region'])
         .attr('y', d => yBar(d['mean']))
         .attr("width", xBar.bandwidth())
         .attr("height", function(d) { return height - margin- yBar(d.mean); })
-        .style("fill", d => colorScale(d['region']));
+        .style("fill", d => colorScale(d['region']))
+        .on('click', function(d){
+            var element = d3.select(this);
+            barChart.selectAll('rect').attr('opacity', 0.5);
+            element.attr('opacity', 1);
+            updateScattePlot();
+            scatterPlot.selectAll('circle')
+            .filter(d => d.region != element.attr('region'))
+            .style('opacity', 0);
+        });
         return;
     }
 function updateScattePlot(){
@@ -115,6 +130,7 @@ function updateScattePlot(){
     scatterPlot.selectAll('circle').data(data)
               .enter()
               .append('circle')
+              .attr("region", d => d['region'])
               .attr("cx", d => x(d[xParam][year]))
               .attr("cy", d => y(d[yParam][year]))
               .attr("r", d => radiusScale(d[rParam][year]))
